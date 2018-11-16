@@ -10,8 +10,8 @@ defmodule Hangman.Game do
     %Hangman.Game{
       letters: word |> String.codepoints()
     }
-
   end
+
   def new_game() do
     new_game(Dictionary.random_word())
   end
@@ -25,7 +25,7 @@ defmodule Hangman.Game do
     {game, tally(game)}
   end
 
-  def accept_move(game, guess, _already_guessed = true) do
+  def accept_move(game, _guess, _already_guessed = true) do
     Map.put(game, :game_state, :already_used)
   end
 
@@ -35,16 +35,20 @@ defmodule Hangman.Game do
   end
 
   def score_guess(game, _good_guess = true) do
-    new_state = MapSet.new(game.letters)
-    |> MapSet.subset?(game.used)
-    |> maybe_won()
+    new_state =
+      MapSet.new(game.letters)
+      |> MapSet.subset?(game.used)
+      |> maybe_won()
+
     Map.put(game, :game_state, new_state)
   end
 
-  def score_guess(game, _not_good_guess) do
-    # dec turns left
-    # 0? :lost, :bad_guess
-    game
+  def score_guess(game = %{turns_left: 1}, _not_good_guess) do
+    %{game | game_state: :lost, turns_left: 0}
+  end
+
+  def score_guess(game = %{turns_left: turns_left}, _not_good_guess) do
+    %{game | game_state: :bad_guess, turns_left: turns_left - 1}
   end
 
   def maybe_won(true), do: :won
